@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gartic Party</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --bg: #0F172A;
+      --card-bg: #1E293B;
+      --accent: #10B981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    body { background: var(--bg); color: #FFF; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
+    .card { background: var(--card-bg); border-radius: 1rem; padding: 2rem; width: 100%; max-width: 700px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); text-align: center; }
+    .hidden { display: none !important; }
+    h1 { margin-bottom: 1.5rem; font-size: 2rem; color: #38BDF8; }
+    .btn { background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: bold; cursor: pointer; transition: 0.2s; margin: 0.5rem; width: 100%; max-width: 250px; }
+    .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+    .btn-accent { background: var(--accent); }
+    input { width: 100%; max-width: 300px; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #334155; background: #0F172A; color: white; margin-bottom: 1rem; text-align: center; font-size: 1rem; }
+    #canvas-area { margin: 1rem 0; display: flex; flex-direction: column; align-items: center; }
+    canvas { background: white; border-radius: 0.5rem; cursor: crosshair; touch-action: none; }
+    .toolbar { display: flex; gap: 0.5rem; margin-top: 0.75rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .color-dot { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+    .color-dot.selected { border-color: white; transform: scale(1.1); }
+    .timer { font-size: 1.5rem; font-weight: bold; color: #F59E0B; margin-bottom: 1rem; }
+    .player-list { list-style: none; margin: 1rem 0; background: #0F172A; padding: 1rem; border-radius: 0.5rem; }
+    .player-list li { padding: 0.5rem; border-bottom: 1px solid #1E293B; }
+    .album-step { margin-bottom: 1.5rem; background: #0F172A; padding: 1rem; border-radius: 0.5rem; }
+    .album-img { max-width: 100%; border-radius: 0.5rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="menu-view">
+    <h1>🎨 Gartic Party</h1>
+    <input type="text" id="username" placeholder="Enter Nickname" maxlength="12">
+    <div>
+      <button class="btn" onclick="showHostOpts()">Host Game</button>
+      <button class="btn btn-accent" onclick="showJoinOpts()">Join Game</button>
+    </div>
+
+    <div id="host-opts" class="hidden" style="margin-top: 1.5rem;">
+      <label>Draw Time (sec):</label><br>
+      <input type="number" id="drawTime" value="60" min="20" max="180"><br>
+      <label>Prompt Time (sec):</label><br>
+      <input type="number" id="promptTime" value="30" min="10" max="90"><br>
+      <button class="btn" onclick="createRoom()">Create Room</button>
+    </div>
+
+    <div id="join-opts" class="hidden" style="margin-top: 1.5rem;">
+      <input type="text" id="roomCode" placeholder="4-Letter Room Code" style="text-transform: uppercase;"><br>
+      <button class="btn btn-accent" onclick="joinRoom()">Enter Lobby</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="lobby-view">
+    <h1>Lobby: <span id="display-room-code" style="color:#F59E0B;"></span></h1>
+    <ul class="player-list" id="player-list"></ul>
+    <button class="btn hidden" id="start-btn" onclick="startGame()">Start Game</button>
+  </div>
+
+  <div class="card hidden" id="game-view">
+    <div class="timer" id="timer-display">60</div>
+    <h2 id="instruction"></h2>
+
+    <div id="prompt-container" class="hidden">
+      <input type="text" id="prompt-input" placeholder="Type something hilarious..." style="max-width: 100%; margin-top: 1rem;">
+      <br><button class="btn" onclick="submitTurn()">Submit</button>
+    </div>
+
+    <div id="draw-container" class="hidden">
+      <div id="canvas-area">
+        <canvas id="paintCanvas" width="450" height="300"></canvas>
+        <div class="toolbar">
+          <div class="color-dot selected" style="background:#000" onclick="setColor('#000', this)"></div>
+          <div class="color-dot" style="background:#EF4444" onclick="setColor('#EF4444', this)"></div>
+          <div class="color-dot" style="background:#3B82F6" onclick="setColor('#3B82F6', this)"></div>
+          <div class="color-dot" style="background:#10B981" onclick="setColor('#10B981', this)"></div>
+          <div class="color-dot" style="background:#F59E0B" onclick="setColor('#F59E0B', this)"></div>
+          <div class="color-dot" style="background:#8B5CF6" onclick="setColor('#8B5CF6', this)"></div>
+          <div class="color-dot" style="background:#FFF" onclick="setColor('#FFF', this)"></div>
+          <button class="btn" style="width: auto; padding: 0.4rem 0.8rem;" onclick="clearCanvas()">Clear</button>
+        </div>
+      </div>
+      <button class="btn" onclick="submitTurn()">Done Drawing</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="album-view">
+    <h1>📖 Final Album</h1>
+    <div id="album-container"></div>
+    <button class="btn" onclick="location.reload()">Back to Home</button>
+  </div>
+
+  <script>
+    const socket = io();
+    let currentPhase = null;
+    let timerInterval = null;
+    let currentColor = '#000';
+    let isDrawing = false;
+
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('mouseleave', stopDraw);
+
+    function startDraw(e) { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); }
+    function draw(e) { if(!isDrawing) return; ctx.lineTo(e.offsetX, e.offsetY); ctx.strokeStyle = currentColor; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.stroke(); }
+    function stopDraw() { isDrawing = false; }
+    function setColor(color, el) { currentColor = color; document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected')); el.classList.add('selected'); }
+    function clearCanvas() { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+
+    function showHostOpts() { document.getElementById('host-opts').classList.remove('hidden'); document.getElementById('join-opts').classList.add('hidden'); }
+    function showJoinOpts() { document.getElementById('join-opts').classList.remove('hidden'); document.getElementById('host-opts').classList.add('hidden'); }
+
+    function createRoom() {
+      const username = document.getElementById('username').value.trim();
+      if (!username) return alert('Enter a nickname');
+      socket.emit('createRoom', {
+        username,
+        drawTime: document.getElementById('drawTime').value,
+        promptTime: document.getElementById('promptTime').value
+      });
+    }
+
+    function joinRoom() {
+      const username = document.getElementById('username').value.trim();
+      const roomId = document.getElementById('roomCode').value.trim();
+      if (!username || !roomId) return alert('Enter name and room code');
+      socket.emit('joinRoom', { roomId, username });
+    }
+
+    function startGame() { socket.emit('startGame'); }
+
+    socket.on('roomCreated', ({ roomId, isHost }) => setupLobby(roomId, isHost));
+    socket.on('roomJoined', ({ roomId, isHost }) => setupLobby(roomId, isHost));
+
+    function setupLobby(roomId, isHost) {
+      document.getElementById('menu-view').classList.add('hidden');
+      document.getElementById('lobby-view').classList.remove('hidden');
+      document.getElementById('display-room-code').innerText = roomId;
+      if (isHost) document.getElementById('start-btn').classList.remove('hidden');
+    }
+
+    socket.on('updateLobby', (room) => {
+      const list = document.getElementById('player-list');
+      list.innerHTML = room.players.map(p => `<li>${p.username} ${p.id === room.host ? '👑' : ''}</li>`).join('');
+    });
+
+    socket.on('startPhase', ({ type, timeLimit, previousStep }) => {
+      currentPhase = type;
+      document.getElementById('lobby-view').classList.add('hidden');
+      document.getElementById('game-view').classList.remove('hidden');
+
+      startTimer(timeLimit);
+
+      if (type === 'PROMPT') {
+        document.getElementById('prompt-container').classList.remove('hidden');
+        document.getElementById('draw-container').classList.add('hidden');
+        document.getElementById('prompt-input').value = '';
+        document.getElementById('instruction').innerText = previousStep ? `Describe this image:` : `Write a funny prompt:`;
+        if (previousStep) {
+          const img = new Image();
+          img.src = previousStep.content;
+          img.className = 'album-img';
+          document.getElementById('prompt-container').prepend(img);
+        }
+      } else {
+        document.getElementById('draw-container').classList.remove('hidden');
+        document.getElementById('prompt-container').classList.add('hidden');
+        clearCanvas();
+        document.getElementById('instruction').innerText = `Draw: "${previousStep ? previousStep.content : ''}"`;
+      }
+    });
+
+    function startTimer(seconds) {
+      clearInterval(timerInterval);
+      let time = seconds;
+      document.getElementById('timer-display').innerText = time;
+      timerInterval = setInterval(() => {
+        time--;
+        document.getElementById('timer-display').innerText = time;
+        if (time <= 0) {
+          clearInterval(timerInterval);
+          submitTurn();
+        }
+      }, 1000);
+    }
+
+    function submitTurn() {
+      clearInterval(timerInterval);
+      let payload = '';
+      if (currentPhase === 'PROMPT') {
+        payload = document.getElementById('prompt-input').value || 'Blank Prompt';
+      } else {
+        payload = canvas.toDataURL('image/png', 0.5);
+      }
+      socket.emit('submitTurn', { data: payload });
+      document.getElementById('instruction').innerText = 'Waiting for other players...';
+      document.getElementById('prompt-container').classList.add('hidden');
+      document.getElementById('draw-container').classList.add('hidden');
+    }
+
+    socket.on('showAlbum', ({ chains }) => {
+      document.getElementById('game-view').classList.add('hidden');
+      document.getElementById('album-view').classList.remove('hidden');
+      const container = document.getElementById('album-container');
+      container.innerHTML = chains.map(chain => `
+        <div style="margin-bottom: 2rem;">
+          <h3>${chain.owner}'s Chain</h3>
+          ${chain.steps.map(step => `
+            <div class="album-step">
+              <strong>${step.author}</strong>${step.type === 'text' ? `<p style="font-size:1.2rem; margin-top:0.5rem;">"${step.content}"</p>` : `<br><img class="album-img" src="${step.content}">`}
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    });
+
+    socket.on('errorMsg', (msg) => alert(msg));
+  </script>
+</body>
+</html>
