@@ -38,11 +38,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('joinRoom', ({ roomId, username }) => {
-    const room = rooms[roomId?.toUpperCase()];
+    const code = roomId?.toUpperCase();
+    const room = rooms[code];
     if (!room) return socket.emit('errorMsg', 'Room not found.');
     if (room.state !== 'LOBBY') return socket.emit('errorMsg', 'Game already in progress.');
 
-    currentRoom = roomId.toUpperCase();
+    currentRoom = code;
     socket.join(currentRoom);
     room.players.push({ id: socket.id, username });
 
@@ -103,8 +104,8 @@ function startTurnPhase(roomId) {
     return;
   }
 
-  const isPromptStep = room.round % 2 === 0;
-  const timeLimit = isPromptStep ? room.promptTime : room.drawTime;
+  const isPromptRound = room.round === 0;
+  const timeLimit = isPromptRound ? room.promptTime : room.drawTime;
 
   for (let i = 0; i < room.players.length; i++) {
     const chainIndex = (i + room.round) % room.players.length;
@@ -112,9 +113,10 @@ function startTurnPhase(roomId) {
     const previousStep = targetChain.steps.length > 0 ? targetChain.steps[targetChain.steps.length - 1] : null;
 
     io.to(room.players[i].id).emit('startPhase', {
-      type: isPromptStep ? 'PROMPT' : 'DRAW',
+      type: isPromptRound ? 'PROMPT' : 'DRAW',
       timeLimit,
       previousStep,
+      promptText: targetChain.steps[0]?.content || '',
       round: room.round + 1,
       totalRounds
     });
@@ -130,7 +132,7 @@ function processRoundEnd(roomId) {
     const submission = room.turnData[i];
     room.chains[chainIndex].steps.push({
       author: submission.username,
-      type: room.round % 2 === 0 ? 'text' : 'image',
+      type: room.round === 0 ? 'text' : 'image',
       content: submission.data
     });
   }
