@@ -2,522 +2,197 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Canvas Pass - Collaborative Drawing Game</title>
-  <script src="/socket.io/socket.io.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Gartic Studio: Touch & Stylus</title>
   <style>
-    :root {
-      --bg: #0B0F19;
-      --card-bg: rgba(22, 30, 46, 0.85);
-      --accent-blue: #38BDF8;
-      --accent-purple: #818CF8;
-      --accent-green: #34D399;
-      --danger: #F87171;
-      --text: #F8FAFC;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-drag: none; }
+    body { background: #0f172a; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; touch-action: none; }
+    
+    #toolbar { background: #1e293b; padding: 0.8rem 1.5rem; border-radius: 0.75rem; display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; border: 1px solid #334155; }
+    .tool-btn { background: #334155; color: #fff; border: 2px solid transparent; padding: 0.6rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: bold; }
+    .tool-btn.active { background: #2563eb; border-color: #38bdf8; }
+    
+    input[type="color"] { border: none; width: 40px; height: 40px; border-radius: 0.5rem; cursor: pointer; background: none; }
+    input[type="range"] { width: 100px; }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
-    body {
-      background: radial-gradient(circle at top left, #1E1B4B, var(--bg));
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-      overflow-x: hidden;
-    }
-
-    .glass-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 1.5rem;
-      padding: 2rem;
-      width: 100%;
-      max-width: 900px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-      text-align: center;
-      animation: fadeIn 0.4s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .hidden { display: none !important; }
-
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 1rem;
-    }
-
-    .btn {
-      background: linear-gradient(135deg, var(--accent-purple), #4F46E5);
-      color: white;
-      border: none;
-      padding: 0.85rem 1.75rem;
-      border-radius: 0.75rem;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      margin: 0.4rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
-    }
-
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
-    }
-
-    .btn:active { transform: translateY(0); }
-    .btn-accent { background: linear-gradient(135deg, var(--accent-green), #059669); box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3); }
-    .btn-secondary { background: #334155; box-shadow: none; }
-    .btn-secondary:hover { background: #475569; }
-
-    input[type="text"] {
-      width: 100%;
-      max-width: 320px;
-      padding: 0.85rem;
-      border-radius: 0.75rem;
-      border: 1px solid #334155;
-      background: rgba(15, 23, 42, 0.8);
-      color: white;
-      margin-bottom: 1rem;
-      text-align: center;
-      font-size: 1.1rem;
-      outline: none;
-    }
-
-    .time-chips {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin: 1rem 0;
-    }
-
-    .chip {
-      background: #1E293B;
-      border: 1px solid #334155;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-
-    .chip.selected {
-      background: var(--accent-blue);
-      color: #0F172A;
-      border-color: var(--accent-blue);
-    }
-
-    #canvas-wrapper {
-      position: relative;
-      display: inline-block;
-      margin: 1rem 0;
-      border-radius: 1rem;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      border: 2px solid #334155;
-    }
-
-    canvas {
-      background: #FFFFFF;
-      display: block;
-      cursor: crosshair;
-      touch-action: none;
-    }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      background: rgba(15, 23, 42, 0.9);
-      padding: 0.8rem 1.2rem;
-      border-radius: 1rem;
-      margin-top: 0.75rem;
-      flex-wrap: wrap;
-      border: 1px solid #334155;
-    }
-
-    .color-swatch {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: transform 0.15s;
-    }
-
-    .color-swatch:hover { transform: scale(1.15); }
-    .color-swatch.selected { border-color: white; transform: scale(1.2); }
-
-    .timer-badge {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: #FBBF24;
-      background: rgba(251, 191, 36, 0.1);
-      padding: 0.25rem 1.2rem;
-      border-radius: 2rem;
-      display: inline-block;
-      margin-bottom: 0.5rem;
-      border: 1px solid rgba(251, 191, 36, 0.3);
-    }
-
-    .player-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 0.75rem;
-      margin: 1.5rem 0;
-    }
-
-    .player-card {
-      background: rgba(15, 23, 42, 0.6);
-      padding: 0.75rem;
-      border-radius: 0.75rem;
-      border: 1px solid #334155;
-      font-weight: 600;
-    }
-
-    .showcase-chain {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid #334155;
-      border-radius: 1rem;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .showcase-step {
-      margin-top: 1rem;
-      padding: 1rem;
-      background: rgba(30, 41, 59, 0.5);
-      border-radius: 0.75rem;
-    }
-
-    .showcase-img {
-      max-width: 100%;
-      border-radius: 0.5rem;
-      border: 1px solid #334155;
-      margin-top: 0.5rem;
-    }
+    #canvas-container { border: 3px solid #38bdf8; border-radius: 0.75rem; background: #ffffff; box-shadow: 0 10px 25px rgba(0,0,0,0.5); cursor: crosshair; touch-action: none; }
+    canvas { display: block; border-radius: 0.5rem; touch-action: none; }
   </style>
 </head>
 <body>
 
-  <!-- Menu View -->
-  <div class="glass-card" id="menu-view">
-    <h1>🎨 Canvas Pass</h1>
-    <p style="color: #94A3B8; margin-bottom: 1.5rem;">The Collaborative Canvas Game</p>
+  <div id="toolbar">
+    <button class="tool-btn active" id="btn-brush" onclick="setTool('brush')">✏️ Brush</button>
+    <button class="tool-btn" id="btn-fill" onclick="setTool('fill')">🪣 Fill</button>
+    <button class="tool-btn" id="btn-eraser" onclick="setTool('eraser')">🧹 Eraser</button>
     
-    <input type="text" id="username" placeholder="Enter Your Nickname" maxlength="14">
+    <label>Color: <input type="color" id="colorPicker" value="#000000"></label>
+    <label>Size: <input type="range" id="sizePicker" min="1" max="50" value="5"></label>
     
-    <div>
-      <button class="btn" onclick="showHostOpts()">Host Room</button>
-      <button class="btn btn-accent" onclick="showJoinOpts()">Join Room</button>
-    </div>
-
-    <div id="host-opts" class="hidden" style="margin-top: 1.5rem;">
-      <p style="font-weight: 600; margin-bottom: 0.5rem;">Select Drawing Time:</p>
-      <div class="time-chips">
-        <div class="chip" onclick="selectTime(30, this)">30s</div>
-        <div class="chip selected" onclick="selectTime(60, this)">60s</div>
-        <div class="chip" onclick="selectTime(90, this)">90s</div>
-        <div class="chip" onclick="selectTime(120, this)">120s</div>
-      </div>
-      <button class="btn" onclick="createRoom()" style="margin-top: 1rem;">Create Lobby</button>
-    </div>
-
-    <div id="join-opts" class="hidden" style="margin-top: 1.5rem;">
-      <input type="text" id="roomCode" placeholder="4-LETTER CODE" style="text-transform: uppercase;"><br>
-      <button class="btn btn-accent" onclick="joinRoom()">Enter Game</button>
-    </div>
+    <button class="tool-btn" style="background:#ef4444;" onclick="clearCanvas()">Clear</button>
   </div>
 
-  <!-- Lobby View -->
-  <div class="glass-card hidden" id="lobby-view">
-    <p style="color: #94A3B8;">ROOM CODE</p>
-    <h1 id="display-room-code" style="font-size: 3.5rem; letter-spacing: 0.1em; color: var(--accent-blue);">---</h1>
-    
-    <div class="player-grid" id="player-list"></div>
-    
-    <button class="btn btn-accent hidden" id="start-btn" onclick="startGame()">Start Game</button>
-  </div>
-
-  <!-- Game View -->
-  <div class="glass-card hidden" id="game-view">
-    <div class="timer-badge" id="timer-display">60</div>
-    <h2 id="instruction" style="margin-bottom: 0.5rem;"></h2>
-
-    <!-- Prompt Container -->
-    <div id="prompt-container" class="hidden">
-      <input type="text" id="prompt-input" placeholder="Give a creative starting prompt..." style="max-width: 100%; margin-top: 1rem;">
-      <br><button class="btn btn-accent" onclick="submitTurn()">Submit Prompt</button>
-    </div>
-
-    <!-- Drawing Container -->
-    <div id="draw-container" class="hidden">
-      <div id="canvas-wrapper">
-        <canvas id="paintCanvas" width="800" height="500"></canvas>
-      </div>
-
-      <div class="toolbar">
-        <div class="color-swatch selected" style="background:#000000" onclick="setMode('brush', '#000000', this)"></div>
-        <div class="color-swatch" style="background:#EF4444" onclick="setMode('brush', '#EF4444', this)"></div>
-        <div class="color-swatch" style="background:#3B82F6" onclick="setMode('brush', '#3B82F6', this)"></div>
-        <div class="color-swatch" style="background:#10B981" onclick="setMode('brush', '#10B981', this)"></div>
-        <div class="color-swatch" style="background:#F59E0B" onclick="setMode('brush', '#F59E0B', this)"></div>
-        <div class="color-swatch" style="background:#8B5CF6" onclick="setMode('brush', '#8B5CF6', this)"></div>
-        <div class="color-swatch" style="background:#EC4899" onclick="setMode('brush', '#EC4899', this)"></div>
-        <input type="color" id="customColor" onchange="setMode('brush', this.value, null)" style="width:28px; height:28px; border:none; cursor:pointer; background:none;">
-
-        <span style="border-left: 1px solid #334155; height: 20px; margin: 0 0.3rem;"></span>
-
-        <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem;" onclick="setMode('eraser', null, this)">🧹 Eraser</button>
-        <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem;" onclick="undo()">↩️ Undo</button>
-        <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem;" onclick="redo()">↪️ Redo</button>
-
-        <span style="border-left: 1px solid #334155; height: 20px; margin: 0 0.3rem;"></span>
-
-        <label style="font-size: 0.85rem; font-weight: 600;">Size:</label>
-        <input type="range" id="brushSize" min="1" max="40" value="5" style="width: 80px;" oninput="updateBrushSize(this.value)">
-      </div>
-
-      <button class="btn btn-accent" style="margin-top: 1rem;" onclick="submitTurn()">Finish & Pass Canvas ➡️</button>
-    </div>
-  </div>
-
-  <!-- Showcase / Album View -->
-  <div class="glass-card hidden" id="album-view">
-    <h1>✨ Evolution Showcase</h1>
-    <p style="color: #94A3B8; margin-bottom: 1.5rem;">See how each artwork transformed round by round!</p>
-    <div id="album-container"></div>
-    <button class="btn" onclick="location.reload()">Play Again</button>
+  <div id="canvas-container">
+    <canvas id="paintCanvas" width="800" height="600"></canvas>
   </div>
 
   <script>
-    const socket = io();
-    let selectedDrawTime = 60;
-    let timerInterval = null;
-    let currentMode = 'brush';
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    
+    let currentTool = 'brush';
+    let isDrawing = false;
     let currentColor = '#000000';
     let currentSize = 5;
-    let isDrawing = false;
-    let undoStack = [];
-    let redoStack = [];
 
-    const canvas = document.getElementById('paintCanvas');
-    const ctx = canvas.getContext('2d');
+    // Fill canvas initial background with white
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Canvas Events
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDraw);
-    canvas.addEventListener('mouseleave', stopDraw);
+    document.getElementById('colorPicker').addEventListener('change', (e) => currentColor = e.target.value);
+    document.getElementById('sizePicker').addEventListener('input', (e) => currentSize = e.target.value);
 
-    // Keyboard Shortcuts (Ctrl+Z / Ctrl+Y)
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 'z') undo();
-      if (e.ctrlKey && e.key === 'y') redo();
-    });
-
-    function saveState() {
-      if (undoStack.length > 20) undoStack.shift();
-      undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-      redoStack = [];
+    function setTool(tool) {
+      currentTool = tool;
+      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`btn-${tool}`).classList.add('active');
     }
 
-    function startDraw(e) {
-      saveState();
-      isDrawing = true;
-      ctx.beginPath();
-      ctx.moveTo(e.offsetX, e.offsetY);
+    function clearCanvas() {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    function draw(e) {
-      if (!isDrawing) return;
-      ctx.lineTo(e.offsetX, e.offsetY);
-      ctx.strokeStyle = currentMode === 'eraser' ? '#FFFFFF' : currentColor;
-      ctx.lineWidth = currentSize;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.stroke();
-    }
+    // --- POINTER EVENTS (Handles Mouse, Touch, & Stylus/Pen Natively) ---
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.round(e.clientX - rect.left);
+      const y = Math.round(e.clientY - rect.top);
 
-    function stopDraw() { isDrawing = false; }
-
-    function undo() {
-      if (undoStack.length > 0) {
-        redoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-        ctx.putImageData(undoStack.pop(), 0, 0);
-      }
-    }
-
-    function redo() {
-      if (redoStack.length > 0) {
-        undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-        ctx.putImageData(redoStack.pop(), 0, 0);
-      }
-    }
-
-    function setMode(mode, color, el) {
-      currentMode = mode;
-      if (color) currentColor = color;
-      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-      if (el && el.classList.contains('color-swatch')) el.classList.add('selected');
-    }
-
-    function updateBrushSize(val) { currentSize = val; }
-
-    function showHostOpts() {
-      document.getElementById('host-opts').classList.remove('hidden');
-      document.getElementById('join-opts').classList.add('hidden');
-    }
-
-    function showJoinOpts() {
-      document.getElementById('join-opts').classList.remove('hidden');
-      document.getElementById('host-opts').classList.add('hidden');
-    }
-
-    function selectTime(time, el) {
-      selectedDrawTime = time;
-      document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-    }
-
-    function createRoom() {
-      const username = document.getElementById('username').value.trim();
-      if (!username) return alert('Enter a nickname');
-      socket.emit('createRoom', { username, drawTime: selectedDrawTime, promptTime: 30 });
-    }
-
-    function joinRoom() {
-      const username = document.getElementById('username').value.trim();
-      const roomId = document.getElementById('roomCode').value.trim();
-      if (!username || !roomId) return alert('Enter name and room code');
-      socket.emit('joinRoom', { roomId, username });
-    }
-
-    function startGame() { socket.emit('startGame'); }
-
-    socket.on('roomCreated', ({ roomId, isHost }) => setupLobby(roomId, isHost));
-    socket.on('roomJoined', ({ roomId, isHost }) => setupLobby(roomId, isHost));
-
-    function setupLobby(roomId, isHost) {
-      document.getElementById('menu-view').classList.add('hidden');
-      document.getElementById('lobby-view').classList.remove('hidden');
-      document.getElementById('display-room-code').innerText = roomId;
-      if (isHost) document.getElementById('start-btn').classList.remove('hidden');
-    }
-
-    socket.on('updateLobby', (room) => {
-      const list = document.getElementById('player-list');
-      list.innerHTML = room.players.map(p => `
-        <div class="player-card">
-          ${p.username} ${p.id === room.host ? '👑' : ''}
-        </div>
-      `).join('');
-    });
-
-    socket.on('startPhase', ({ type, timeLimit, previousStep, promptText, round, totalRounds }) => {
-      document.getElementById('lobby-view').classList.add('hidden');
-      document.getElementById('game-view').classList.remove('hidden');
-      startTimer(timeLimit);
-
-      if (type === 'PROMPT') {
-        document.getElementById('prompt-container').classList.remove('hidden');
-        document.getElementById('draw-container').classList.add('hidden');
-        document.getElementById('instruction').innerText = `Round 1/${totalRounds}: Write a Prompt!`;
+      if (currentTool === 'fill') {
+        floodFill(x, y, hexToRgba(currentColor));
       } else {
-        document.getElementById('draw-container').classList.remove('hidden');
-        document.getElementById('prompt-container').classList.add('hidden');
+        isDrawing = true;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
         
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        undoStack = [];
-        redoStack = [];
-
-        if (previousStep && previousStep.type === 'image') {
-          document.getElementById('instruction').innerText = `Round ${round}/${totalRounds}: Add onto this drawing! (Prompt: "${promptText}")`;
-          const img = new Image();
-          img.onload = () => ctx.drawImage(img, 0, 0);
-          img.src = previousStep.content;
-        } else {
-          document.getElementById('instruction').innerText = `Round ${round}/${totalRounds}: Draw: "${promptText}"`;
-        }
+        // Dynamically scale size if stylus supports pressure sensitivity
+        let pressureSize = (e.pressure && e.pressure > 0) ? currentSize * e.pressure * 2 : currentSize;
+        ctx.lineWidth = pressureSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
       }
     });
 
-    function startTimer(seconds) {
-      clearInterval(timerInterval);
-      let time = seconds;
-      document.getElementById('timer-display').innerText = time;
-      timerInterval = setInterval(() => {
-        time--;
-        document.getElementById('timer-display').innerText = time;
-        if (time <= 0) {
-          clearInterval(timerInterval);
-          submitTurn();
-        }
-      }, 1000);
-    }
+    canvas.addEventListener('pointermove', (e) => {
+      e.preventDefault();
+      if (!isDrawing || currentTool === 'fill') return;
 
-    function submitTurn() {
-      clearInterval(timerInterval);
-      let payload = '';
-      if (!document.getElementById('prompt-container').classList.contains('hidden')) {
-        payload = document.getElementById('prompt-input').value.trim() || 'A Mystery Masterpiece';
-      } else {
-        payload = canvas.toDataURL('image/png', 0.6);
-      }
-      socket.emit('submitTurn', { data: payload });
-      document.getElementById('instruction').innerText = 'Waiting for other artists...';
-      document.getElementById('prompt-container').classList.add('hidden');
-      document.getElementById('draw-container').classList.add('hidden');
-    }
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.round(e.clientX - rect.left);
+      const y = Math.round(e.clientY - rect.top);
 
-    socket.on('showAlbum', ({ chains }) => {
-      document.getElementById('game-view').classList.add('hidden');
-      document.getElementById('album-view').classList.remove('hidden');
-      const container = document.getElementById('album-container');
-
-      container.innerHTML = chains.map(chain => {
-        const prompt = chain.steps[0]?.content || 'Custom Drawing';
-        const finalImg = chain.steps[chain.steps.length - 1]?.content;
-
-        return `
-          <div class="showcase-chain">
-            <h2 style="color:var(--accent-blue);">Original Prompt: "${prompt}"</h2>
-            <p style="color:#94A3B8; margin-bottom:1rem;">Started by ${chain.owner}</p>
-            
-            ${chain.steps.slice(1).map((step, idx) => `
-              <div class="showcase-step">
-                <p><strong>Layer ${idx + 1} added by:</strong>${step.author}</p>
-                <img class="showcase-img" src="${step.content}">
-              </div>
-            `).join('')}
-
-            <a class="btn btn-accent" style="margin-top:1rem; text-decoration:none;" href="${finalImg}" download="masterpiece-${chain.owner}.png">
-              📥 Download Final Artwork
-            </a>
-          </div>
-        `;
-      }).join('');
+      let pressureSize = (e.pressure && e.pressure > 0) ? currentSize * e.pressure * 2 : currentSize;
+      ctx.lineWidth = pressureSize;
+      
+      ctx.lineTo(x, y);
+      ctx.stroke();
     });
 
-    socket.on('errorMsg', (msg) => alert(msg));
+    canvas.addEventListener('pointerup', () => isDrawing = false);
+    canvas.addEventListener('pointerleave', () => isDrawing = false);
+
+    // --- FLOOD FILL ALGORITHM ---
+    function floodFill(startX, startY, fillColor) {
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+      
+      const startPos = (startY * canvas.width + startX) * 4;
+      const startR = data[startPos];
+      const startG = data[startPos + 1];
+      const startB = data[startPos + 2];
+      const startA = data[startPos + 3];
+
+      // Don't fill if target color is identical to fill color
+      if (colorsMatch([startR, startG, startB, startA], fillColor)) return;
+
+      const pixelStack = [[startX, startY]];
+
+      while (pixelStack.length > 0) {
+        const [x, y] = pixelStack.pop();
+        let currentPos = (y * canvas.width + x) * 4;
+
+        let newY = y;
+        while (newY >= 0 && matchStartColor(currentPos, startR, startG, startB, startA)) {
+          newY--;
+          currentPos -= canvas.width * 4;
+        }
+
+        currentPos += canvas.width * 4;
+        newY++;
+
+        let reachLeft = false;
+        let reachRight = false;
+
+        while (newY < canvas.height && matchStartColor(currentPos, startR, startG, startB, startA)) {
+          colorPixel(currentPos, fillColor);
+
+          if (x > 0) {
+            if (matchStartColor(currentPos - 4, startR, startG, startB, startA)) {
+              if (!reachLeft) {
+                pixelStack.push([x - 1, newY]);
+                reachLeft = true;
+              }
+            } else if (reachLeft) {
+              reachLeft = false;
+            }
+          }
+
+          if (x < canvas.width - 1) {
+            if (matchStartColor(currentPos + 4, startR, startG, startB, startA)) {
+              if (!reachRight) {
+                pixelStack.push([x + 1, newY]);
+                reachRight = true;
+              }
+            } else if (reachRight) {
+              reachRight = false;
+            }
+          }
+
+          newY++;
+          currentPos += canvas.width * 4;
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+
+      function matchStartColor(pos, r, g, b, a) {
+        return Math.abs(data[pos] - r) < 30 &&
+               Math.abs(data[pos+1] - g) < 30 &&
+               Math.abs(data[pos+2] - b) < 30 &&
+               Math.abs(data[pos+3] - a) < 30;
+      }
+
+      function colorPixel(pos, color) {
+        data[pos] = color[0];
+        data[pos + 1] = color[1];
+        data[pos + 2] = color[2];
+        data[pos + 3] = 255;
+      }
+    }
+
+    function colorsMatch(a, b) {
+      return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+    }
+
+    function hexToRgba(hex) {
+      let c = hex.substring(1);
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      const num = parseInt(c, 16);
+      return [(num >> 16) & 255, (num >> 8) & 255, num & 255, 255];
+    }
   </script>
 </body>
 </html>
