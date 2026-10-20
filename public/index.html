@@ -1,198 +1,567 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Gartic Studio: Touch & Stylus</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-drag: none; }
-    body { background: #0f172a; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; touch-action: none; }
-    
-    #toolbar { background: #1e293b; padding: 0.8rem 1.5rem; border-radius: 0.75rem; display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; border: 1px solid #334155; }
-    .tool-btn { background: #334155; color: #fff; border: 2px solid transparent; padding: 0.6rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: bold; }
-    .tool-btn.active { background: #2563eb; border-color: #38bdf8; }
-    
-    input[type="color"] { border: none; width: 40px; height: 40px; border-radius: 0.5rem; cursor: pointer; background: none; }
-    input[type="range"] { width: 100px; }
-
-    #canvas-container { border: 3px solid #38bdf8; border-radius: 0.75rem; background: #ffffff; box-shadow: 0 10px 25px rgba(0,0,0,0.5); cursor: crosshair; touch-action: none; }
-    canvas { display: block; border-radius: 0.5rem; touch-action: none; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doodle Party — Draw. Pass. Reveal.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0c14;--panel:#171522;--panel2:#201d2e;--line:#302b43;--text:#f8f7ff;--muted:#a8a3bc;--purple:#a58bff;--pink:#ff78b5;--mint:#61e5cb;--yellow:#ffe08a;--danger:#ff6d86}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 15% 0%,#282044 0,transparent 38%),radial-gradient(ellipse at 95% 20%,#1b2d3a 0,transparent 32%),var(--bg);color:var(--text);font-family:"DM Sans",sans-serif}button,input,textarea{font:inherit}button{cursor:pointer;border:0}button:disabled{opacity:.45;cursor:not-allowed}.hidden{display:none!important}.app{max-width:1280px;margin:auto;padding:24px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:30px}.brand{display:flex;align-items:center;gap:12px;font-family:"Space Grotesk",sans-serif;font-size:22px;font-weight:700;letter-spacing:-.8px}.logo{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--purple),var(--pink));color:#171321;font-size:23px;box-shadow:0 8px 30px #a58bff35}.brand span{color:var(--purple)}.online-pill{border:1px solid #3d3652;background:#1a1726;color:var(--mint);padding:8px 12px;border-radius:999px;font-size:12px;display:flex;gap:8px;align-items:center}.dot{width:7px;height:7px;background:var(--mint);border-radius:50%;box-shadow:0 0 12px #61e5cb}.screen{animation:appear .35s ease}@keyframes appear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.hero{text-align:center;max-width:760px;margin:54px auto 36px}.eyebrow{color:var(--mint);font-size:12px;text-transform:uppercase;letter-spacing:2.6px;font-weight:700}.hero h1{font:700 clamp(42px,7vw,76px)/.99 "Space Grotesk",sans-serif;letter-spacing:-4px;margin:18px 0}.gradient{background:linear-gradient(100deg,#fff 12%,#b8a5ff 50%,#ff94c5 90%);-webkit-background-clip:text;background-clip:text;color:transparent}.hero p{font-size:17px;line-height:1.7;color:var(--muted);max-width:560px;margin:20px auto 0}.home-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:800px;margin:auto}.card{background:linear-gradient(145deg,#1b1828,#15131f);border:1px solid var(--line);border-radius:24px;padding:26px;box-shadow:0 20px 60px #0002}.card h2,.card h3{font-family:"Space Grotesk",sans-serif;margin:0 0 8px}.card p{color:var(--muted);line-height:1.55;margin:0 0 20px;font-size:14px}.card-icon{width:46px;height:46px;border-radius:15px;background:#a58bff20;color:var(--purple);display:grid;place-items:center;font-size:23px;margin-bottom:18px}.field-label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin:13px 0 7px}.input{width:100%;border:1px solid #39334c;background:#100e18;color:var(--text);border-radius:12px;padding:13px 14px;outline:none;transition:.2s}.input:focus{border-color:var(--purple);box-shadow:0 0 0 3px #a58bff1c}.btn{padding:12px 17px;border-radius:12px;font-weight:700;transition:transform .15s,filter .15s}.btn:hover{transform:translateY(-1px);filter:brightness(1.08)}.btn-primary{background:linear-gradient(110deg,var(--purple),#c29bff);color:#171321;box-shadow:0 8px 24px #a58bff28}.btn-secondary{background:#29243a;color:var(--text);border:1px solid #3a344f}.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}.btn-danger{background:#3a1d2b;color:#ff9ab0;border:1px solid #633047}.full{width:100%;margin-top:10px}.tiny{font-size:12px;color:var(--muted)}.error{color:#ff94a6;font-size:13px;margin-top:10px;min-height:18px}.lobby-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.8fr);gap:20px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.section-head h2{font:700 25px "Space Grotesk";margin:0}.room-code{font:700 22px "Space Grotesk";letter-spacing:5px;color:var(--yellow);background:#2a2638;padding:11px 16px;border-radius:13px;border:1px dashed #61577c;cursor:pointer}.players{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.player{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid var(--line);background:#14121d;border-radius:15px;min-width:0}.avatar{width:39px;height:39px;display:grid;place-items:center;border-radius:13px;font-weight:700;color:#171321;flex-shrink:0}.player-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.player-role{font-size:11px;color:var(--muted);margin-top:3px}.host-tag{font-size:10px;color:var(--yellow);border:1px solid #61502c;padding:3px 6px;border-radius:6px;margin-left:auto}.rules{display:grid;gap:14px}.rule{display:flex;gap:12px;align-items:flex-start}.rule-icon{width:32px;height:32px;border-radius:10px;background:#a58bff17;display:grid;place-items:center;flex-shrink:0}.rule strong{display:block;font-size:13px;margin:1px 0 4px}.rule span{font-size:12px;color:var(--muted);line-height:1.45}.lobby-footer{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:22px;flex-wrap:wrap}.status-note{color:var(--muted);font-size:13px}.game-top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px;flex-wrap:wrap}.game-title{font:700 25px "Space Grotesk"}.round-tag{color:var(--purple);background:#a58bff17;border:1px solid #4b3e72;padding:8px 11px;border-radius:10px;font-size:12px;font-weight:700}.timer-wrap{display:flex;align-items:center;gap:10px;min-width:170px}.timer{font:700 25px "Space Grotesk";font-variant-numeric:tabular-nums}.timer-bar{height:6px;background:#342e45;border-radius:99px;overflow:hidden;flex:1;min-width:60px}.timer-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--mint),var(--purple));transition:width .2s linear}.game-layout{display:grid;grid-template-columns:minmax(0,1fr) 255px;gap:18px;align-items:start}.work-card{padding:18px}.prompt-box{border:1px solid #4a3d6c;background:linear-gradient(130deg,#27213c,#201a2c);border-radius:15px;padding:15px 17px;margin-bottom:15px}.prompt-kicker{font-size:10px;color:var(--purple);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px}.prompt-text{font:600 17px/1.45 "Space Grotesk";overflow-wrap:anywhere}.canvas-shell{background:#fff;border-radius:14px;overflow:hidden;position:relative;border:1px solid #51496a;box-shadow:0 10px 40px #0003}.canvas-shell canvas{display:block;width:100%;height:auto;aspect-ratio:3/2;touch-action:none;cursor:crosshair}.canvas-watermark{position:absolute;bottom:9px;right:12px;font-size:10px;color:#9b9b9b;pointer-events:none;opacity:.65}.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:13px 0 0}.tool-btn{height:38px;min-width:38px;padding:0 11px;border-radius:10px;background:#252135;color:#dcd7ed;border:1px solid #3a344e;font-size:13px;font-weight:700}.tool-btn.active{border-color:var(--purple);background:#4a3a6b;color:#fff;box-shadow:0 0 0 2px #a58bff1b}.tool-sep{height:24px;width:1px;background:#393348;margin:0 2px}.color-picker{width:38px;height:38px;border:2px solid #514965;border-radius:10px;padding:3px;background:#252135;cursor:pointer}.color-presets{display:flex;gap:5px;align-items:center}.swatch{width:24px;height:24px;border-radius:8px;border:2px solid #ffffff2b;cursor:pointer}.swatch.active{outline:2px solid var(--purple);outline-offset:2px}.slider-group{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}.slider-group input{width:78px;accent-color:var(--purple)}.toolbar-bottom{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}.tool-group{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.side-card{padding:18px}.side-card h3{font-size:16px}.side-step{display:flex;gap:10px;margin:15px 0}.step-number{width:25px;height:25px;border-radius:8px;display:grid;place-items:center;background:#2b2540;color:var(--purple);font-size:12px;font-weight:700;flex-shrink:0}.side-step strong{font-size:12px;display:block;margin-bottom:4px}.side-step span{font-size:11px;color:var(--muted);line-height:1.4;display:block}.submit-area{margin-top:16px}.submit-area .btn{width:100%;padding:14px}.submitted-state{text-align:center;padding:32px 10px}.checkmark{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;margin:0 auto 16px;background:#61e5cb1a;color:var(--mint);font-size:28px}.submitted-state h3{font:700 22px "Space Grotesk";margin:0 0 8px}.submitted-state p{color:var(--muted);font-size:13px;line-height:1.5}.waiting-dots{display:flex;gap:5px;justify-content:center;margin-top:20px}.waiting-dots i{width:7px;height:7px;background:var(--purple);border-radius:50%;animation:bounce .9s infinite alternate}.waiting-dots i:nth-child(2){animation-delay:.2s}.waiting-dots i:nth-child(3){animation-delay:.4s}@keyframes bounce{to{transform:translateY(-5px);opacity:.4}}.prompt-compose{max-width:740px;margin:30px auto}.prompt-compose .card{padding:32px}.prompt-compose textarea{min-height:145px;resize:vertical}.prompt-example{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.example-chip{font-size:11px;color:#d4caff;border:1px solid #45395f;background:#211b30;padding:7px 10px;border-radius:999px;cursor:pointer}.showcase-head{text-align:center;margin:28px auto 32px;max-width:700px}.showcase-head .eyebrow{color:var(--pink)}.showcase-head h1{font:700 clamp(38px,6vw,64px)/1 "Space Grotesk";letter-spacing:-3px;margin:12px 0}.showcase-head p{color:var(--muted);line-height:1.6}.showcase-controls{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:20px 0 26px}.chain-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}.chain-tab{padding:10px 14px;background:#1b1828;color:var(--muted);border:1px solid var(--line);border-radius:12px;font-size:12px;font-weight:700}.chain-tab.active{background:#372c50;color:#fff;border-color:#8d72d5}.chain-stage{max-width:1000px;margin:0 auto}.chain-intro{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}.chain-intro h2{font:700 22px "Space Grotesk";margin:0}.chain-count{color:var(--muted);font-size:12px}.storyboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.story-card{border:1px solid var(--line);background:linear-gradient(145deg,#1b1828,#14121e);border-radius:18px;overflow:hidden;min-width:0;animation:cardIn .4s both;animation-delay:calc(var(--i,0)*.07s)}@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}.story-card-head{padding:13px 14px;display:flex;justify-content:space-between;gap:8px;align-items:center}.story-card-head strong{font-size:12px}.story-card-head span{font-size:10px;color:var(--muted)}.story-art{background:#fff;aspect-ratio:3/2;display:grid;place-items:center;overflow:hidden}.story-art img{width:100%;height:100%;object-fit:contain}.story-art .blank-art{color:#999;font-size:12px}.story-caption{padding:13px 14px;color:#d7d2e5;font-size:12px;line-height:1.5;min-height:48px;overflow-wrap:anywhere}.story-caption small{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}.original-prompt{color:var(--yellow);font-weight:600}.results-bottom{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:30px 0 55px}.notice{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#f6f1ff;color:#1b1727;padding:12px 18px;border-radius:12px;box-shadow:0 12px 40px #0005;z-index:99;font-weight:700;font-size:13px;transition:.25s;max-width:calc(100vw - 30px);text-align:center}.notice.show{opacity:1;transform:translate(-50%,0)}.modal-backdrop{position:fixed;inset:0;background:#08070dbb;display:grid;place-items:center;padding:20px;z-index:50}.modal{max-width:520px;width:100%;background:#1a1726;border:1px solid #413954;border-radius:22px;padding:25px;box-shadow:0 30px 100px #0008}.modal h2{font:700 24px "Space Grotesk";margin:0 0 10px}.modal p{color:var(--muted);line-height:1.6;font-size:14px}.lightbox-img{width:100%;max-height:65vh;object-fit:contain;background:#fff;border-radius:12px}.footer-note{text-align:center;color:#69647c;font-size:11px;padding:30px 0 12px}.keyboard{font-size:10px;border:1px solid #4a435b;padding:2px 5px;border-radius:5px;color:#b8b1ca}
+@media(max-width:850px){.lobby-layout,.game-layout{grid-template-columns:1fr}.game-layout .side-card{order:2}.game-layout .work-card{order:1}.side-card .side-step{display:inline-flex;width:31%;vertical-align:top}.hero{margin-top:35px}.app{padding:16px}.game-layout{gap:12px}}
+@media(max-width:560px){.home-grid{grid-template-columns:1fr}.hero h1{letter-spacing:-2px}.hero{margin:25px auto}.players{grid-template-columns:1fr}.card{padding:20px}.work-card{padding:11px}.toolbar{gap:6px}.tool-btn{min-width:34px;padding:0 8px}.color-presets{order:3}.slider-group input{width:56px}.side-card .side-step{width:100%;display:flex}.timer-wrap{min-width:130px}.game-title{font-size:21px}.room-code{font-size:19px}.storyboard{grid-template-columns:repeat(auto-fit,minmax(155px,1fr))}.story-card-head{padding:10px}.story-caption{padding:10px}.topbar{margin-bottom:18px}.brand{font-size:19px}}
+</style>
 </head>
 <body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="logo">✳</div> doodle<span>party</span></div>
+    <div class="online-pill"><i class="dot"></i><span id="connectionLabel">Connecting…</span></div>
+  </header>
+  <main>
+    <section id="homeScreen" class="screen">
+      <div class="hero">
+        <div class="eyebrow">A little art. A lot of chaos.</div>
+        <h1><span class="gradient">Draw it.</span><br>Pass it. Reveal it.</h1>
+        <p>Make a prompt, draw someone else's idea, and watch it transform into something completely unhinged. Grab your friends and let the chaos begin.</p>
+      </div>
+      <div class="home-grid">
+        <div class="card">
+          <div class="card-icon">✦</div><h2>Start a party</h2>
+          <p>Create a private room and invite your friends with a five-character code.</p>
+          <label class="field-label" for="createName">YOUR NAME</label>
+          <input class="input" id="createName" maxlength="18" placeholder="e.g. doodle wizard" autocomplete="nickname">
+          <button class="btn btn-primary full" id="createBtn">Create a lobby ↗</button>
+          <div class="error" id="createError"></div>
+        </div>
+        <div class="card">
+          <div class="card-icon">⌁</div><h2>Join your friends</h2>
+          <p>Already have a room code? Jump straight into the lobby.</p>
+          <label class="field-label" for="joinName">YOUR NAME</label>
+          <input class="input" id="joinName" maxlength="18" placeholder="Pick a name" autocomplete="nickname">
+          <label class="field-label" for="joinCode">ROOM CODE</label>
+          <input class="input" id="joinCode" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;letter-spacing:4px">
+          <button class="btn btn-secondary full" id="joinBtn">Join the party →</button>
+          <div class="error" id="joinError"></div>
+        </div>
+      </div>
+      <div class="footer-note">Made for friends, questionable art, and very questionable interpretations.</div>
+    </section>
 
-  <div id="toolbar">
-    <button class="tool-btn active" id="btn-brush" onclick="setTool('brush')">✏️ Brush</button>
-    <button class="tool-btn" id="btn-fill" onclick="setTool('fill')">🪣 Fill</button>
-    <button class="tool-btn" id="btn-eraser" onclick="setTool('eraser')">🧹 Eraser</button>
-    
-    <label>Color: <input type="color" id="colorPicker" value="#000000"></label>
-    <label>Size: <input type="range" id="sizePicker" min="1" max="50" value="5"></label>
-    
-    <button class="tool-btn" style="background:#ef4444;" onclick="clearCanvas()">Clear</button>
-  </div>
+    <section id="lobbyScreen" class="screen hidden">
+      <div class="section-head"><div><div class="eyebrow">Your party is ready</div><h2 style="margin-top:7px">Lobby lounge</h2></div><button class="btn btn-ghost" id="leaveLobbyBtn">Leave lobby</button></div>
+      <div class="lobby-layout">
+        <div class="card">
+          <div class="section-head"><div><h2>Who's playing?</h2><div class="tiny" id="playerCountText">Waiting for players…</div></div><button class="room-code" id="copyCodeBtn" title="Click to copy room code">-----</button></div>
+          <div class="players" id="playerList"></div>
+          <div class="lobby-footer"><div class="status-note" id="lobbyStatus">Share the code to invite your friends.</div><button class="btn btn-primary" id="startBtn">Start game ✨</button></div>
+          <div class="error" id="lobbyError"></div>
+        </div>
+        <div class="card">
+          <h3>How to play</h3><p>Every player starts an artwork chain. Each round, your idea gets passed to someone new.</p>
+          <div class="rules">
+            <div class="rule"><div class="rule-icon">✍</div><div><strong>01 — Write a prompt</strong><span>Come up with a weird, wonderful or wonderfully weird idea.</span></div></div>
+            <div class="rule"><div class="rule-icon">🎨</div><div><strong>02 — Draw for 90 seconds</strong><span>Use the drawing studio to interpret a prompt or the previous drawing.</span></div></div>
+            <div class="rule"><div class="rule-icon">🔁</div><div><strong>03 — Pass it along</strong><span>You won't draw on your own original prompt. Each player contributes to other chains.</span></div></div>
+            <div class="rule"><div class="rule-icon">🎬</div><div><strong>04 — Watch the reveal</strong><span>See how each original idea changes as it travels through the group.</span></div></div>
+          </div>
+          <div style="margin-top:20px;padding:12px;border-radius:12px;background:#211d30;border:1px solid #39304f"><div class="tiny">PARTY SIZE</div><div style="font:700 22px 'Space Grotesk';margin-top:4px">2–12 players</div><div class="tiny" style="margin-top:4px">More friends = more chaos.</div></div>
+        </div>
+      </div>
+    </section>
 
-  <div id="canvas-container">
-    <canvas id="paintCanvas" width="800" height="600"></canvas>
-  </div>
+    <section id="promptScreen" class="screen hidden">
+      <div class="game-top"><div><div class="eyebrow">Round zero</div><div class="game-title">Plant the seed 🌱</div></div><div class="timer-wrap"><div class="timer" id="promptTimer">1:30</div><div class="timer-bar"><div class="timer-fill" id="promptTimerFill"></div></div></div></div>
+      <div class="prompt-compose"><div class="card">
+        <div class="eyebrow">Your original idea</div><h2 style="font-size:30px;margin:10px 0">Write a prompt</h2><p>Make it specific enough to inspire a drawing, but weird enough to go wonderfully wrong. Your prompt will be kept secret until the big reveal.</p>
+        <textarea class="input" id="promptInput" maxlength="140" placeholder="A raccoon running a five-star restaurant on Mars…"></textarea>
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:8px"><span class="tiny" id="promptCharCount">0 / 140</span><span class="tiny">Keep it friendly ✨</span></div>
+        <div class="prompt-example"><button class="example-chip">A shark on a skateboard</button><button class="example-chip">A tiny wizard at the gym</button><button class="example-chip">A Surron riding a dinosaur</button></div>
+        <button class="btn btn-primary full" id="submitPromptBtn">Lock in my prompt →</button><div class="error" id="promptError"></div>
+      </div><div id="promptWaiting" class="card hidden" style="margin-top:14px;text-align:center"><div class="checkmark">✓</div><h3>Prompt locked in!</h3><p>You're all set. Waiting for the other players to finish their prompts…</p><div class="waiting-dots"><i></i><i></i><i></i></div></div></div>
+    </section>
 
-  <script>
-    const canvas = document.getElementById('paintCanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    
-    let currentTool = 'brush';
-    let isDrawing = false;
-    let currentColor = '#000000';
-    let currentSize = 5;
+    <section id="drawScreen" class="screen hidden">
+      <div class="game-top"><div><div class="eyebrow" id="drawEyebrow">Round 1</div><div class="game-title" id="drawTitle">Time to draw 🎨</div></div><div class="round-tag" id="roundTag">DRAWING 1 / 3</div><div class="timer-wrap"><div class="timer" id="drawTimer">1:30</div><div class="timer-bar"><div class="timer-fill" id="drawTimerFill"></div></div></div></div>
+      <div class="game-layout">
+        <div class="card work-card" id="drawingWork">
+          <div class="prompt-box"><div class="prompt-kicker" id="promptKicker">YOUR MISSION</div><div class="prompt-text" id="assignmentText">Loading your assignment…</div><div class="tiny" id="assignmentHint" style="margin-top:7px"></div></div>
+          <div class="canvas-shell"><canvas id="drawingCanvas" width="900" height="600" aria-label="Drawing canvas"></canvas><div class="canvas-watermark">doodleparty ✳</div></div>
+          <div class="toolbar">
+            <button class="tool-btn active" data-tool="pen" title="Pen (P)">✎ Pen</button>
+            <button class="tool-btn" data-tool="eraser" title="Eraser (E)">▱ Eraser</button>
+            <button class="tool-btn" data-tool="fill" title="Fill bucket (F)">▨ Fill</button>
+            <div class="tool-sep"></div>
+            <div class="color-presets" id="colorPresets">
+              <button class="swatch active" data-color="#20202a" style="background:#20202a" title="Black"></button>
+              <button class="swatch" data-color="#ff526d" style="background:#ff526d" title="Coral"></button>
+              <button class="swatch" data-color="#ff9d43" style="background:#ff9d43" title="Orange"></button>
+              <button class="swatch" data-color="#ffd84d" style="background:#ffd84d" title="Yellow"></button>
+              <button class="swatch" data-color="#58ce88" style="background:#58ce88" title="Green"></button>
+              <button class="swatch" data-color="#55baff" style="background:#55baff" title="Blue"></button>
+              <button class="swatch" data-color="#a783ff" style="background:#a783ff" title="Purple"></button>
+              <button class="swatch" data-color="#ff82c8" style="background:#ff82c8" title="Pink"></button>
+              <button class="swatch" data-color="#ffffff" style="background:#fff" title="White"></button>
+            </div>
+            <input class="color-picker" id="customColor" type="color" value="#20202a" title="Custom colour">
+          </div>
+          <div class="toolbar-bottom">
+            <div class="tool-group">
+              <div class="slider-group">SIZE <input type="range" id="brushSize" min="2" max="48" value="8"><b id="brushSizeValue">8</b></div>
+              <div class="slider-group">OPACITY <input type="range" id="brushOpacity" min="10" max="100" value="100"><b id="brushOpacityValue">100%</b></div>
+            </div>
+            <div class="tool-group">
+              <button class="tool-btn" id="undoBtn" title="Undo (Ctrl+Z)">↶ Undo</button>
+              <button class="tool-btn" id="redoBtn" title="Redo (Ctrl+Y)">↷ Redo</button>
+              <button class="tool-btn" id="zoomOutBtn" title="Zoom out">−</button>
+              <button class="tool-btn" id="zoomInBtn" title="Zoom in">+</button>
+              <button class="tool-btn" id="resetViewBtn" title="Reset view">Reset view</button>
+              <button class="tool-btn" id="clearCanvasBtn" title="Clear canvas">Clear</button>
+            </div>
+          </div>
+          <div class="toolbar-bottom"><div class="tiny">Tip: use <span class="keyboard">P</span> pen, <span class="keyboard">E</span> eraser, <span class="keyboard">Ctrl Z</span> undo.</div><div class="tiny" id="canvasZoomLabel">100% view</div></div>
+          <div class="submit-area"><button class="btn btn-primary" id="submitDrawingBtn">Submit drawing & pass it on ✨</button><div class="error" id="drawError"></div></div>
+        </div>
+        <div class="card side-card" id="drawingSide">
+          <h3>Make some magic</h3><p>There's no such thing as bad art. Well… let's see.</p>
+          <div class="side-step"><div class="step-number">1</div><div><strong>Look closely</strong><span>Interpret the prompt or the previous player's drawing. No peeking at other chains.</span></div></div>
+          <div class="side-step"><div class="step-number">2</div><div><strong>Get creative</strong><span>Pick colours, change brush size, erase, undo, and fill areas.</span></div></div>
+          <div class="side-step"><div class="step-number">3</div><div><strong>Pass the chaos</strong><span>Submit before the timer runs out. Your work moves to the next artist.</span></div></div>
+          <div style="padding:13px;background:#211d30;border-radius:12px;margin-top:18px"><div class="tiny">ARTWORK CHAIN</div><div style="font-weight:700;margin-top:5px" id="chainProgress">Your drawing is one link in the chain.</div></div>
+          <div class="tiny" style="margin-top:15px;line-height:1.5">Your drawing is sent privately to the game server and shown to the next assigned player.</div>
+        </div>
+        <div class="card submitted-state hidden" id="drawingWaiting" style="grid-column:1/-1"><div class="checkmark">✓</div><h3>Drawing submitted!</h3><p>You've passed the chaos along. Sit tight while everyone else finishes their artwork.</p><div class="waiting-dots"><i></i><i></i><i></i></div></div>
+      </div>
+    </section>
 
-    // Fill canvas initial background with white
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    <section id="intermissionScreen" class="screen hidden">
+      <div class="prompt-compose"><div class="card submitted-state"><div class="checkmark">✦</div><div class="eyebrow">Round complete</div><h3 style="margin-top:10px">Passing the sketchbook…</h3><p id="intermissionText">Getting the next round ready.</p><div class="waiting-dots"><i></i><i></i><i></i></div></div></div>
+    </section>
 
-    document.getElementById('colorPicker').addEventListener('change', (e) => currentColor = e.target.value);
-    document.getElementById('sizePicker').addEventListener('input', (e) => currentSize = e.target.value);
+    <section id="resultsScreen" class="screen hidden">
+      <div class="showcase-head"><div class="eyebrow">The grand reveal</div><h1><span class="gradient">Look what you made.</span></h1><p>One prompt went in. Absolute chaos came out. Explore each artwork chain and see how the story changed from start to finish.</p></div>
+      <div class="showcase-controls"><button class="btn btn-primary" id="playRevealBtn">▶ Play reveal</button><button class="btn btn-secondary" id="downloadChainBtn">↓ Download this chain</button><button class="btn btn-ghost" id="downloadAllBtn">Download all chains</button></div>
+      <div class="chain-tabs" id="chainTabs"></div>
+      <div class="chain-stage"><div class="chain-intro"><h2 id="chainTitle">Artwork chain 1</h2><div class="chain-count" id="chainCount">4 stages</div></div><div class="storyboard" id="storyboard"></div></div>
+      <div class="results-bottom"><button class="btn btn-secondary" id="backLobbyBtn">Back to lobby</button><button class="btn btn-primary" id="playAgainBtn">Play again ↻</button></div>
+    </section>
+  </main>
+</div>
+<div id="notice" class="notice"></div>
+<div id="modalBackdrop" class="modal-backdrop hidden"><div class="modal"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h2 id="modalTitle">Drawing</h2><button class="btn btn-ghost" id="closeModalBtn">✕</button></div><div id="modalContent"></div></div></div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(() => {
+  const socket = io();
+  const $ = id => document.getElementById(id);
+  const screens = ["homeScreen","lobbyScreen","promptScreen","drawScreen","intermissionScreen","resultsScreen"];
+  const state = { room:null, playerId:null, screen:"homeScreen", assignments:[], assignmentIndex:0, activeAssignment:null, results:[], activeChain:0, promptSubmitted:false, drawingSubmitted:false, timerInterval:null, chainsRevealed:false, revealTimeouts:[] };
+  const canvas = $("drawingCanvas"), ctx = canvas.getContext("2d", { willReadFrequently:true });
+  const drawing = { tool:"pen", color:"#20202a", size:8, opacity:1, drawing:false, last:null, undo:[], redo:[], zoom:1, panX:0, panY:0, space:false, panning:false, panStart:null, maxHistory:35 };
+  let toastTimeout = null;
 
-    function setTool(tool) {
-      currentTool = tool;
-      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(`btn-${tool}`).classList.add('active');
-    }
-
-    function clearCanvas() {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // --- POINTER EVENTS (Handles Mouse, Touch, & Stylus/Pen Natively) ---
-    canvas.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      const x = Math.round(e.clientX - rect.left);
-      const y = Math.round(e.clientY - rect.top);
-
-      if (currentTool === 'fill') {
-        floodFill(x, y, hexToRgba(currentColor));
-      } else {
-        isDrawing = true;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        
-        // Dynamically scale size if stylus supports pressure sensitivity
-        let pressureSize = (e.pressure && e.pressure > 0) ? currentSize * e.pressure * 2 : currentSize;
-        ctx.lineWidth = pressureSize;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
-      }
+  function showScreen(id) {
+    state.screen = id;
+    screens.forEach(s => $(s).classList.toggle("hidden", s !== id));
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function toast(message) {
+    const el = $("notice"); el.textContent = message; el.classList.add("show");
+    clearTimeout(toastTimeout); toastTimeout = setTimeout(() => el.classList.remove("show"), 2600);
+  }
+  function setError(id, message="") { $(id).textContent = message; }
+  function request(event, data={}) {
+    return new Promise(resolve => {
+      let finished = false;
+      const timer = setTimeout(() => { if (!finished) { finished = true; resolve({ok:false,error:"The server took too long to respond. Please try again."}); } }, 8000);
+      socket.emit(event, data, response => {
+        if (finished) return;
+        finished = true; clearTimeout(timer); resolve(response || {ok:false,error:"No response from server."});
+      });
     });
+  }
+  function setConnected(connected) {
+    $("connectionLabel").textContent = connected ? "Connected" : "Reconnecting…";
+    $("connectionLabel").previousElementSibling.style.background = connected ? "var(--mint)" : "var(--yellow)";
+  }
+  socket.on("connect", () => setConnected(true));
+  socket.on("disconnect", () => { setConnected(false); toast("Connection lost — trying to reconnect…"); });
+  socket.on("connect_error", () => setConnected(false));
+  socket.on("notice", msg => toast(msg));
+  socket.on("room:update", room => {
+    state.room = room;
+    if (state.screen === "lobbyScreen") renderLobby();
+    if (room.phase === "prompts" && state.screen === "lobbyScreen") showScreen("promptScreen");
+    if (room.phase === "intermission" && state.screen !== "resultsScreen") showScreen("intermissionScreen");
+  });
+  socket.on("game:prompt-phase", () => {
+    state.promptSubmitted = false;
+    $("promptInput").disabled = false; $("submitPromptBtn").disabled = false;
+    $("promptInput").value = ""; $("promptCharCount").textContent = "0 / 140";
+    $("promptWaiting").classList.add("hidden"); setError("promptError","");
+    showScreen("promptScreen");
+  });
+  socket.on("game:progress", info => {
+    if (info.kind === "prompts" && state.screen === "promptScreen" && state.promptSubmitted) {
+      $("promptWaiting").querySelector("p").textContent = `${info.count} of ${info.total} players have locked in their prompts.`;
+    }
+  });
+  socket.on("game:draw-start", info => {
+    state.drawingSubmitted = false;
+    $("intermissionText").textContent = "Your next drawing assignment is on its way.";
+    showScreen("intermissionScreen");
+  });
+  socket.on("game:assignments", data => {
+    state.assignments = data.assignments || [];
+    state.assignmentIndex = 0;
+    state.drawingSubmitted = false;
+    if (!state.assignments.length) {
+      showScreen("intermissionScreen");
+      $("intermissionText").textContent = "Waiting for the other players…";
+      return;
+    }
+    loadAssignment();
+  });
+  socket.on("game:round-complete", info => {
+    if (state.screen !== "resultsScreen") {
+      showScreen("intermissionScreen");
+      $("intermissionText").textContent = info.timedOut ? "Time's up! Moving to the next round…" : "Everyone's drawings are in. Passing the sketchbook…";
+    }
+  });
+  socket.on("game:results", data => {
+    state.results = data.chains || [];
+    state.activeChain = 0; state.chainsRevealed = false;
+    showScreen("resultsScreen"); renderResults(); playReveal();
+  });
+  socket.on("game:reset", () => {
+    state.promptSubmitted = false; state.drawingSubmitted = false; state.assignments = []; state.results = [];
+    showScreen("lobbyScreen"); renderLobby();
+  });
 
-    canvas.addEventListener('pointermove', (e) => {
-      e.preventDefault();
-      if (!isDrawing || currentTool === 'fill') return;
+  $("createBtn").addEventListener("click", async () => {
+    setError("createError","");
+    if (!socket.connected) return setError("createError","Connecting to the server. Try again in a moment.");
+    $("createBtn").disabled = true;
+    const response = await request("lobby:create", {name:$("createName").value});
+    $("createBtn").disabled = false;
+    if (!response.ok) return setError("createError",response.error);
+    state.playerId = response.playerId;
+    showScreen("lobbyScreen"); renderLobby();
+  });
+  $("joinBtn").addEventListener("click", async () => {
+    setError("joinError","");
+    const code = $("joinCode").value.trim().toUpperCase();
+    if (code.length !== 5) return setError("joinError","Enter the 5-character room code.");
+    if (!socket.connected) return setError("joinError","Connecting to the server. Try again in a moment.");
+    $("joinBtn").disabled = true;
+    const response = await request("lobby:join", {name:$("joinName").value,code});
+    $("joinBtn").disabled = false;
+    if (!response.ok) return setError("joinError",response.error);
+    state.playerId = response.playerId;
+    showScreen("lobbyScreen"); renderLobby();
+  });
+  $("joinCode").addEventListener("input", e => e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5));
+  $("joinCode").addEventListener("keydown", e => { if(e.key==="Enter") $("joinBtn").click(); });
+  $("createName").addEventListener("keydown", e => { if(e.key==="Enter") $("createBtn").click(); });
+  $("joinName").addEventListener("keydown", e => { if(e.key==="Enter") $("joinBtn").click(); });
 
-      const rect = canvas.getBoundingClientRect();
-      const x = Math.round(e.clientX - rect.left);
-      const y = Math.round(e.clientY - rect.top);
-
-      let pressureSize = (e.pressure && e.pressure > 0) ? currentSize * e.pressure * 2 : currentSize;
-      ctx.lineWidth = pressureSize;
-      
-      ctx.lineTo(x, y);
-      ctx.stroke();
+  function renderLobby() {
+    const room = state.room; if (!room) return;
+    $("copyCodeBtn").textContent = room.code;
+    $("playerCountText").textContent = `${room.players.length} / 12 players`;
+    $("playerList").innerHTML = "";
+    room.players.forEach(player => {
+      const item = document.createElement("div"); item.className = "player";
+      const avatar = document.createElement("div"); avatar.className = "avatar"; avatar.style.background = player.color; avatar.textContent = player.name.slice(0,1).toUpperCase();
+      const info = document.createElement("div"); info.style.minWidth = "0";
+      const name = document.createElement("div"); name.className = "player-name"; name.textContent = player.name + (player.id===state.playerId ? " (you)" : "");
+      const role = document.createElement("div"); role.className = "player-role"; role.textContent = player.connected ? "Ready to doodle" : "Reconnecting…";
+      info.append(name,role); item.append(avatar,info);
+      if (player.host) { const tag = document.createElement("span"); tag.className = "host-tag"; tag.textContent = "HOST"; item.append(tag); }
+      $("playerList").append(item);
     });
+    const isHost = room.hostId === state.playerId;
+    $("startBtn").classList.toggle("hidden",!isHost);
+    $("startBtn").disabled = room.players.length < 2;
+    $("lobbyStatus").textContent = room.players.length < 2 ? "Invite at least one friend to start." : (isHost ? "Everyone here? Start the game when you're ready." : "Waiting for the host to start the game.");
+  }
+  $("copyCodeBtn").addEventListener("click", async () => {
+    if (!state.room) return;
+    try { await navigator.clipboard.writeText(state.room.code); toast("Room code copied!"); }
+    catch { toast("Your room code is " + state.room.code); }
+  });
+  $("startBtn").addEventListener("click", async () => {
+    setError("lobbyError","");
+    const response = await request("game:start");
+    if (!response.ok) setError("lobbyError",response.error);
+  });
+  $("leaveLobbyBtn").addEventListener("click", async () => {
+    await request("lobby:leave"); state.room = null; state.playerId = null; showScreen("homeScreen");
+  });
 
-    canvas.addEventListener('pointerup', () => isDrawing = false);
-    canvas.addEventListener('pointerleave', () => isDrawing = false);
+  $("promptInput").addEventListener("input", () => $("promptCharCount").textContent = `${$("promptInput").value.length} / 140`);
+  document.querySelectorAll(".example-chip").forEach(chip => chip.addEventListener("click", () => { $("promptInput").value = chip.textContent; $("promptInput").dispatchEvent(new Event("input")); }));
+  $("submitPromptBtn").addEventListener("click", async () => {
+    setError("promptError","");
+    const prompt = $("promptInput").value.trim();
+    if (prompt.length < 3) return setError("promptError","Give your idea at least a few words.");
+    $("submitPromptBtn").disabled = true;
+    const response = await request("prompt:submit",{prompt});
+    if (!response.ok) { $("submitPromptBtn").disabled = false; return setError("promptError",response.error); }
+    state.promptSubmitted = true;
+    $("promptInput").disabled = true; $("promptWaiting").classList.remove("hidden");
+    $("promptWaiting").querySelector("p").textContent = "You're all set. Waiting for the other players to finish their prompts…";
+  });
 
-    // --- FLOOD FILL ALGORITHM ---
-    function floodFill(startX, startY, fillColor) {
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imgData.data;
-      
-      const startPos = (startY * canvas.width + startX) * 4;
-      const startR = data[startPos];
-      const startG = data[startPos + 1];
-      const startB = data[startPos + 2];
-      const startA = data[startPos + 3];
-
-      // Don't fill if target color is identical to fill color
-      if (colorsMatch([startR, startG, startB, startA], fillColor)) return;
-
-      const pixelStack = [[startX, startY]];
-
-      while (pixelStack.length > 0) {
-        const [x, y] = pixelStack.pop();
-        let currentPos = (y * canvas.width + x) * 4;
-
-        let newY = y;
-        while (newY >= 0 && matchStartColor(currentPos, startR, startG, startB, startA)) {
-          newY--;
-          currentPos -= canvas.width * 4;
-        }
-
-        currentPos += canvas.width * 4;
-        newY++;
-
-        let reachLeft = false;
-        let reachRight = false;
-
-        while (newY < canvas.height && matchStartColor(currentPos, startR, startG, startB, startA)) {
-          colorPixel(currentPos, fillColor);
-
-          if (x > 0) {
-            if (matchStartColor(currentPos - 4, startR, startG, startB, startA)) {
-              if (!reachLeft) {
-                pixelStack.push([x - 1, newY]);
-                reachLeft = true;
-              }
-            } else if (reachLeft) {
-              reachLeft = false;
-            }
-          }
-
-          if (x < canvas.width - 1) {
-            if (matchStartColor(currentPos + 4, startR, startG, startB, startA)) {
-              if (!reachRight) {
-                pixelStack.push([x + 1, newY]);
-                reachRight = true;
-              }
-            } else if (reachRight) {
-              reachRight = false;
-            }
-          }
-
-          newY++;
-          currentPos += canvas.width * 4;
-        }
-      }
-
-      ctx.putImageData(imgData, 0, 0);
-
-      function matchStartColor(pos, r, g, b, a) {
-        return Math.abs(data[pos] - r) < 30 &&
-               Math.abs(data[pos+1] - g) < 30 &&
-               Math.abs(data[pos+2] - b) < 30 &&
-               Math.abs(data[pos+3] - a) < 30;
-      }
-
-      function colorPixel(pos, color) {
-        data[pos] = color[0];
-        data[pos + 1] = color[1];
-        data[pos + 2] = color[2];
-        data[pos + 3] = 255;
-      }
+  function initCanvas() {
+    ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=1; ctx.globalCompositeOperation="source-over";
+    ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.restore();
+    drawing.undo=[]; drawing.redo=[]; updateUndoButtons(); saveHistory();
+  }
+  function saveHistory() {
+    try {
+      const snap = ctx.getImageData(0,0,canvas.width,canvas.height);
+      drawing.undo.push(snap);
+      if (drawing.undo.length > drawing.maxHistory) drawing.undo.shift();
+      drawing.redo = []; updateUndoButtons();
+    } catch(e) {}
+  }
+  function restoreSnapshot(snapshot) { if(snapshot) ctx.putImageData(snapshot,0,0); }
+  function undo() {
+    if (drawing.undo.length <= 1) return;
+    drawing.redo.push(drawing.undo.pop());
+    restoreSnapshot(drawing.undo[drawing.undo.length-1]); updateUndoButtons();
+  }
+  function redo() {
+    if (!drawing.redo.length) return;
+    const snap = drawing.redo.pop(); drawing.undo.push(snap); restoreSnapshot(snap); updateUndoButtons();
+  }
+  function updateUndoButtons() { $("undoBtn").disabled = drawing.undo.length <= 1; $("redoBtn").disabled = !drawing.redo.length; }
+  function loadAssignment() {
+    const assignment = state.assignments[state.assignmentIndex];
+    if (!assignment) return;
+    state.activeAssignment = assignment;
+    $("drawEyebrow").textContent = `Round ${assignment.stepNumber} of ${assignment.totalSteps}`;
+    $("roundTag").textContent = `DRAWING ${assignment.stepNumber} / ${assignment.totalSteps}`;
+    $("drawTitle").textContent = assignment.stepNumber === 1 ? "Bring the prompt to life 🎨" : "What do you see? 👀";
+    $("promptKicker").textContent = assignment.stepNumber === 1 ? `PROMPT FROM ${assignment.authorName.toUpperCase()}` : `LAST DRAWN BY ${String(assignment.previousArtist || "A player").toUpperCase()}`;
+    $("assignmentText").textContent = assignment.stepNumber === 1 ? assignment.prompt : "Draw what you think the previous drawing represents.";
+    $("assignmentHint").textContent = assignment.stepNumber === 1 ? "This is the only time you'll see the original prompt in this chain." : "Interpret the drawing below. Don't ask for the original prompt!";
+    $("chainProgress").textContent = `Contribution ${assignment.stepNumber} of ${assignment.totalSteps} · started by ${assignment.authorName}`;
+    initCanvas();
+    if (assignment.previousDrawing) {
+      const img = new Image();
+      img.onload = () => { ctx.drawImage(img,0,0,canvas.width,canvas.height); saveHistory(); };
+      img.onerror = () => toast("Couldn't load the previous drawing, but you can still draw.");
+      img.src = assignment.previousDrawing;
     }
+    $("drawingWork").classList.remove("hidden"); $("drawingSide").classList.remove("hidden"); $("drawingWaiting").classList.add("hidden");
+    $("submitDrawingBtn").disabled = false; setError("drawError","");
+    resetView(); showScreen("drawScreen");
+  }
+  function finishLocalDrawing() {
+    state.drawingSubmitted = true;
+    $("drawingWork").classList.add("hidden"); $("drawingSide").classList.add("hidden"); $("drawingWaiting").classList.remove("hidden");
+  }
+  $("submitDrawingBtn").addEventListener("click", async () => {
+    if (!state.activeAssignment || state.drawingSubmitted) return;
+    $("submitDrawingBtn").disabled = true; setError("drawError","");
+    const image = canvas.toDataURL("image/png");
+    const response = await request("drawing:submit",{chainId:state.activeAssignment.chainId,image});
+    if (!response.ok) { $("submitDrawingBtn").disabled = false; return setError("drawError",response.error); }
+    state.drawingSubmitted = true; finishLocalDrawing();
+  });
+  $("undoBtn").addEventListener("click",undo); $("redoBtn").addEventListener("click",redo);
+  $("clearCanvasBtn").addEventListener("click", () => {
+    ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=1; ctx.globalCompositeOperation="source-over"; ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.restore(); saveHistory();
+  });
+  document.querySelectorAll("[data-tool]").forEach(btn => btn.addEventListener("click", () => {
+    drawing.tool = btn.dataset.tool;
+    document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b===btn));
+  }));
+  function chooseColor(color) {
+    drawing.color=color; $("customColor").value=color;
+    document.querySelectorAll(".swatch").forEach(b=>b.classList.toggle("active",b.dataset.color.toLowerCase()===color.toLowerCase()));
+  }
+  document.querySelectorAll(".swatch").forEach(btn=>btn.addEventListener("click",()=>chooseColor(btn.dataset.color)));
+  $("customColor").addEventListener("input",e=>chooseColor(e.target.value));
+  $("brushSize").addEventListener("input",e=>{drawing.size=Number(e.target.value);$("brushSizeValue").textContent=drawing.size;});
+  $("brushOpacity").addEventListener("input",e=>{drawing.opacity=Number(e.target.value)/100;$("brushOpacityValue").textContent=e.target.value+"%";});
+  function resetView(){drawing.zoom=1;drawing.panX=0;drawing.panY=0;applyCanvasView();}
+  function applyCanvasView(){
+    // Zoom is a drawing-view aid; canvas stays correctly sized for the exported image.
+    canvas.style.transformOrigin="center center";
+    canvas.style.transform=`scale(${drawing.zoom}) translate(${drawing.panX}px,${drawing.panY}px)`;
+    $("canvasZoomLabel").textContent=`${Math.round(drawing.zoom*100)}% view`;
+  }
+  $("zoomInBtn").addEventListener("click",()=>{drawing.zoom=Math.min(2.2,drawing.zoom+.15);applyCanvasView();});
+  $("zoomOutBtn").addEventListener("click",()=>{drawing.zoom=Math.max(1,drawing.zoom-.15);if(drawing.zoom===1){drawing.panX=0;drawing.panY=0;}applyCanvasView();});
+  $("resetViewBtn").addEventListener("click",resetView);
 
-    function colorsMatch(a, b) {
-      return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+  function pointerPos(e) {
+    const rect=canvas.getBoundingClientRect();
+    return {x:(e.clientX-rect.left)/rect.width*canvas.width,y:(e.clientY-rect.top)/rect.height*canvas.height};
+  }
+  function drawSegment(a,b) {
+    ctx.save(); ctx.globalAlpha=drawing.tool==="eraser"?1:drawing.opacity;
+    ctx.globalCompositeOperation=drawing.tool==="eraser"?"destination-out":"source-over";
+    ctx.strokeStyle=drawing.color;ctx.fillStyle=drawing.color;ctx.lineWidth=drawing.size;ctx.lineCap="round";ctx.lineJoin="round";
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore();
+  }
+  function floodFill(startX,startY) {
+    const x=Math.floor(startX),y=Math.floor(startY);
+    if(x<0||y<0||x>=canvas.width||y>=canvas.height)return;
+    const imageData=ctx.getImageData(0,0,canvas.width,canvas.height), data=imageData.data, w=canvas.width,h=canvas.height;
+    const start=(y*w+x)*4, target=[data[start],data[start+1],data[start+2],data[start+3]];
+    const hex=drawing.color.replace("#",""), fill=[parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16),255];
+    if(target[0]===fill[0]&&target[1]===fill[1]&&target[2]===fill[2]&&target[3]===fill[3])return;
+    const tolerance=28, matches=(i)=>Math.abs(data[i]-target[0])<=tolerance&&Math.abs(data[i+1]-target[1])<=tolerance&&Math.abs(data[i+2]-target[2])<=tolerance&&Math.abs(data[i+3]-target[3])<=tolerance;
+    const stack=[[x,y]], seen=new Uint8Array(w*h); let processed=0;
+    while(stack.length&&processed<canvas.width*canvas.height){
+      const [px,py]=stack.pop();if(px<0||py<0||px>=w||py>=h)continue;
+      const pixel=py*w+px;if(seen[pixel])continue;seen[pixel]=1;
+      const i=pixel*4;if(!matches(i))continue;
+      data[i]=fill[0];data[i+1]=fill[1];data[i+2]=fill[2];data[i+3]=fill[3];processed++;
+      stack.push([px+1,py],[px-1,py],[px,py+1],[px,py-1]);
     }
+    ctx.putImageData(imageData,0,0);saveHistory();
+  }
+  canvas.addEventListener("pointerdown",e=>{
+    if(state.drawingSubmitted||state.screen!=="drawScreen")return;
+    e.preventDefault();canvas.setPointerCapture(e.pointerId);
+    const pos=pointerPos(e);
+    if(drawing.tool==="fill"){floodFill(pos.x,pos.y);return;}
+    drawing.drawing=true;drawing.last=pos;
+    ctx.save();ctx.globalAlpha=drawing.tool==="eraser"?1:drawing.opacity;ctx.globalCompositeOperation=drawing.tool==="eraser"?"destination-out":"source-over";ctx.fillStyle=drawing.color;ctx.beginPath();ctx.arc(pos.x,pos.y,drawing.size/2,0,Math.PI*2);ctx.fill();ctx.restore();
+  });
+  canvas.addEventListener("pointermove",e=>{
+    if(!drawing.drawing||!drawing.last)return;
+    e.preventDefault();const pos=pointerPos(e);drawSegment(drawing.last,pos);drawing.last=pos;
+  });
+  function endStroke(){if(drawing.drawing){drawing.drawing=false;drawing.last=null;saveHistory();}}
+  canvas.addEventListener("pointerup",endStroke);canvas.addEventListener("pointercancel",endStroke);canvas.addEventListener("lostpointercapture",endStroke);
+  window.addEventListener("keydown",e=>{
+    const target=e.target;const editing=target&&(target.tagName==="INPUT"||target.tagName==="TEXTAREA"||target.isContentEditable);
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();e.shiftKey?redo():undo();return;}
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="y"){e.preventDefault();redo();return;}
+    if(editing)return;
+    if(e.code==="Space"&&state.screen==="drawScreen"){drawing.space=true;return;}
+    if(state.screen==="drawScreen"){
+      if(e.key.toLowerCase()==="p"){drawing.tool="pen";document.querySelector('[data-tool="pen"]').click();}
+      if(e.key.toLowerCase()==="e"){drawing.tool="eraser";document.querySelector('[data-tool="eraser"]').click();}
+      if(e.key.toLowerCase()==="f"){document.querySelector('[data-tool="fill"]').click();}
+    }
+  });
+  window.addEventListener("keyup",e=>{if(e.code==="Space")drawing.space=false;});
 
-    function hexToRgba(hex) {
-      let c = hex.substring(1);
-      if (c.length === 3) c = c.split('').map(x => x + x).join('');
-      const num = parseInt(c, 16);
-      return [(num >> 16) & 255, (num >> 8) & 255, num & 255, 255];
-    }
-  </script>
+  function updateTimer(timerId,fillId,deadline,duration) {
+    clearInterval(state.timerInterval);
+    const tick=()=>{
+      const left=Math.max(0,Math.ceil((deadline-Date.now())/1000));
+      $(timerId).textContent=`${Math.floor(left/60)}:${String(left%60).padStart(2,"0")}`;
+      $(fillId).style.width=`${Math.max(0,Math.min(100,left/duration*100))}%`;
+      if(left<=10){$(timerId).style.color="var(--danger)";}else{$(timerId).style.color="var(--text)";}
+      if(left===0)clearInterval(state.timerInterval);
+    };
+    tick();state.timerInterval=setInterval(tick,200);
+  }
+  // Room updates carry the authoritative deadline, so all players share one timer.
+  socket.on("room:update", room => {
+    if(room.phase==="prompts" && state.screen==="promptScreen" && room.deadline) updateTimer("promptTimer","promptTimerFill",room.deadline,90);
+    if(room.phase==="drawing" && state.screen==="drawScreen" && room.deadline) updateTimer("drawTimer","drawTimerFill",room.deadline,90);
+  });
+
+  function renderResults() {
+    $("chainTabs").innerHTML="";
+    state.results.forEach((chain,index)=>{
+      const button=document.createElement("button");button.className="chain-tab"+(index===state.activeChain?" active":"");
+      button.textContent=`Chain ${index+1}`;button.addEventListener("click",()=>{state.activeChain=index;state.chainsRevealed=true;renderResults();});$("chainTabs").append(button);
+    });
+    const chain=state.results[state.activeChain];if(!chain)return;
+    $("chainTitle").textContent=`Artwork chain ${state.activeChain+1}`;
+    $("chainCount").textContent=`${chain.steps.length} drawing stage${chain.steps.length===1?"":"s"} · started by ${chain.authorName}`;
+    const board=$("storyboard");board.innerHTML="";
+    const cards=[{type:"prompt",name:chain.authorName,prompt:chain.prompt},...chain.steps.map((s,i)=>({type:"drawing",name:s.artistName,image:s.image,skipped:s.skipped,step:i+1}))];
+    cards.forEach((item,index)=>{
+      const card=document.createElement("article");card.className="story-card";card.style.setProperty("--i",index);
+      const head=document.createElement("div");head.className="story-card-head";
+      const who=document.createElement("strong");who.textContent=item.type==="prompt"?"✍ Original prompt":`🎨 ${item.name}`;
+      const stage=document.createElement("span");stage.textContent=item.type==="prompt"?"START":`STAGE ${item.step}`;
+      head.append(who,stage);
+      const art=document.createElement("div");art.className="story-art";
+      if(item.type==="prompt"){
+        art.style.background="linear-gradient(135deg,#28213c,#1d192b)";
+        const prompt=document.createElement("div");prompt.style.cssText="padding:22px;color:#ffe08a;font:600 18px/1.5 'Space Grotesk';text-align:center;overflow-wrap:anywhere";prompt.textContent=`“${item.prompt}”`;art.append(prompt);
+      }else if(item.image){
+        const img=document.createElement("img");img.src=item.image;img.alt=`Drawing by ${item.name}`;img.loading="lazy";
+        img.addEventListener("click",()=>openLightbox(item.image,`Drawing by ${item.name}`));img.style.cursor="zoom-in";art.append(img);
+      }else{
+        const blank=document.createElement("div");blank.className="blank-art";blank.textContent=item.skipped?"No drawing submitted":"Drawing unavailable";art.append(blank);
+      }
+      const caption=document.createElement("div");caption.className="story-caption";
+      if(item.type==="prompt"){const small=document.createElement("small");small.textContent="THE IDEA";caption.append(small);const text=document.createElement("span");text.className="original-prompt";text.textContent=item.prompt;caption.append(text);}
+      else {const small=document.createElement("small");small.textContent=item.skipped?"TIME RAN OUT":"ARTIST'S INTERPRETATION";caption.append(small);caption.append(document.createTextNode(item.skipped?"This stage was skipped when the timer ended.":`${item.name} added their interpretation.`));}
+      card.append(head,art,caption);board.append(card);
+    });
+    $("playRevealBtn").textContent=state.chainsRevealed?"↻ Replay reveal":"▶ Play reveal";
+  }
+  function playReveal(){
+    state.revealTimeouts.forEach(clearTimeout);state.revealTimeouts=[];
+    state.chainsRevealed=false;state.activeChain=0;renderResults();
+    const cards=[...$("storyboard").children];
+    cards.forEach(card=>{card.style.opacity="0";card.style.transform="translateY(18px) scale(.98)";});
+    cards.forEach((card,i)=>state.revealTimeouts.push(setTimeout(()=>{card.style.transition="opacity .45s ease, transform .45s ease";card.style.opacity="1";card.style.transform="none";},180+i*420)));
+    state.revealTimeouts.push(setTimeout(()=>{state.chainsRevealed=true;$("playRevealBtn").textContent="↻ Replay reveal";},180+cards.length*420));
+  }
+  $("playRevealBtn").addEventListener("click",playReveal);
+  function openLightbox(src,title){
+    $("modalTitle").textContent=title;$("modalContent").innerHTML="";
+    const img=document.createElement("img");img.className="lightbox-img";img.src=src;$("modalContent").append(img);
+    $("modalBackdrop").classList.remove("hidden");
+  }
+  $("closeModalBtn").addEventListener("click",()=>$("modalBackdrop").classList.add("hidden"));
+  $("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))$("modalBackdrop").classList.add("hidden");});
+  function downloadDataUrl(dataUrl,filename){const a=document.createElement("a");a.href=dataUrl;a.download=filename;a.click();}
+  function makeChainExport(chain){
+    const items=[{label:"ORIGINAL PROMPT",text:chain.prompt},...chain.steps.map((s,i)=>({label:`STAGE ${i+1} — ${s.artistName}`,image:s.image,skipped:s.skipped}))];
+    const out=document.createElement("canvas");out.width=1200;out.height=Math.max(360,items.length*290);
+    const c=out.getContext("2d");c.fillStyle="#15121f";c.fillRect(0,0,out.width,out.height);
+    c.fillStyle="#b8a5ff";c.font="bold 34px sans-serif";c.fillText(`DOODLE PARTY · CHAIN ${state.activeChain+1}`,38,48);
+    let y=76;
+    return new Promise(resolve=>{
+      let index=0;
+      const next=()=>{
+        if(index>=items.length){resolve(out.toDataURL("image/png"));return;}
+        const item=items[index++];c.fillStyle="#211c30";c.fillRect(30,y,1140,260);c.fillStyle="#ffe08a";c.font="bold 19px sans-serif";c.fillText(item.label,52,y+34);
+        if(item.text){c.fillStyle="#fff";c.font="24px sans-serif";wrapText(c,item.text,52,y+78,1080,34);}
+        else if(item.image){const img=new Image();img.onload=()=>{c.fillStyle="#fff";c.fillRect(52,y+48,500,200);c.drawImage(img,52,y+48,500,200);y+=282;next();};img.onerror=()=>{c.fillStyle="#aaa";c.fillText("Drawing unavailable",52,y+85);y+=282;next();};img.src=item.image;return;}
+        else {c.fillStyle="#aaa";c.font="18px sans-serif";c.fillText("No drawing submitted",52,y+85);}
+        y+=282;next();
+      };next();
+    });
+  }
+  function wrapText(c,text,x,y,maxWidth,lineHeight){let line="",yy=y;for(const word of String(text).split(" ")){const test=line?line+" "+word:word;if(c.measureText(test).width>maxWidth&&line){c.fillText(line,x,yy);line=word;yy+=lineHeight;}else line=test;}if(line)c.fillText(line,x,yy);}
+  $("downloadChainBtn").addEventListener("click",async()=>{const chain=state.results[state.activeChain];if(!chain)return;toast("Preparing your chain image…");const data=await makeChainExport(chain);downloadDataUrl(data,`doodle-party-chain-${state.activeChain+1}.png`);});
+  $("downloadAllBtn").addEventListener("click",async()=>{
+    if(!state.results.length)return;
+    const old=state.activeChain;toast("Preparing chain downloads…");
+    for(let i=0;i<state.results.length;i++){state.activeChain=i;const data=await makeChainExport(state.results[i]);downloadDataUrl(data,`doodle-party-chain-${i+1}.png`);await new Promise(r=>setTimeout(r,250));}
+    state.activeChain=old;renderResults();
+  });
+  $("playAgainBtn").addEventListener("click",async()=>{
+    const response=await request("game:play-again");
+    if(!response.ok)return toast(response.error);
+  });
+  $("backLobbyBtn").addEventListener("click",async()=>{
+    const response=await request("game:play-again");
+    if(!response.ok){toast(response.error);return;}
+  });
+  // Avoid leaving a drawing round with an accidental browser refresh warning.
+  window.addEventListener("beforeunload",e=>{if(state.screen==="drawScreen"&&!state.drawingSubmitted){e.preventDefault();e.returnValue="";}});
+  initCanvas();
+})();
+</script>
 </body>
 </html>
